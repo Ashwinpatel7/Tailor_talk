@@ -1,22 +1,24 @@
 # 📅 AI Calendar Booking Assistant
 
-A conversational AI agent that helps users book appointments on Google Calendar through natural language chat.
+**Internshala Assignment Submission**
+
+A conversational AI agent that helps users book appointments through natural language chat.
 
 ## 🚀 Features
 
 - **Natural Language Processing**: Understands booking requests in plain English
-- **Calendar Integration**: Connects with Google Calendar (with mock fallback)
-- **Smart Scheduling**: Suggests available time slots based on preferences
-- **Conversational Flow**: Guides users through the booking process
-- **Real-time Chat**: Interactive Streamlit interface
+- **Calendar Integration**: Smart calendar management with mock data
+- **Conversational Flow**: Multi-step booking process with LangGraph
+- **Personalization**: User names, preferences, meeting types
+- **Smart Features**: Meeting IDs, time context, preparation tips
 
-## 🛠 Tech Stack
+## 🛠 Tech Stack (As Required)
 
-- **Backend**: FastAPI + Python
-- **Agent Framework**: LangGraph
-- **Frontend**: Streamlit
-- **Calendar**: Google Calendar API
+- **Backend**: FastAPI + Python ✅
+- **Agent Framework**: LangGraph ✅
+- **Frontend**: Streamlit ✅
 - **AI**: OpenAI GPT-3.5-turbo
+- **Enhanced**: Smart features & personalization
 
 ## 📦 Installation
 
@@ -67,9 +69,9 @@ streamlit run streamlit_app.py
 
 ## 🌐 Access Points
 
-- **Streamlit Chat Interface**: http://localhost:8501
-- **FastAPI Documentation**: http://localhost:8000/docs
-- **API Health Check**: http://localhost:8000/health
+- **Main App**: `streamlit run streamlit_standalone.py`
+- **With API**: `python run.py` (runs both FastAPI + Streamlit)
+- **Hosted Version**: [Your Streamlit Cloud URL]
 
 ## 💬 Example Conversations
 
