@@ -1,9 +1,8 @@
 import streamlit as st
-import requests
-import json
-from datetime import datetime
-import uuid
 import os
+from datetime import datetime, timedelta
+import uuid
+from agent import BookingAgent
 
 # Page config
 st.set_page_config(
@@ -12,41 +11,26 @@ st.set_page_config(
     layout="wide"
 )
 
-# API endpoint
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
-
 def initialize_session():
     """Initialize session state"""
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())
     if "messages" not in st.session_state:
         st.session_state.messages = []
-    if "api_available" not in st.session_state:
-        st.session_state.api_available = check_api_health()
-
-def check_api_health():
-    """Check if API is available"""
-    try:
-        response = requests.get(f"{API_URL}/health", timeout=5)
-        return response.status_code == 200
-    except:
-        return False
-
-def send_message(message: str):
-    """Send message to API and get response"""
-    try:
-        payload = {
-            "message": message,
-            "session_id": st.session_state.session_id
+    if "booking_agent" not in st.session_state:
+        st.session_state.booking_agent = BookingAgent()
+    if "session_state" not in st.session_state:
+        st.session_state.session_state = {
+            'messages': [],
+            'intent': None,
+            'date_preference': None,
+            'time_preference': None,
+            'duration': 60,
+            'available_slots': [],
+            'selected_slot': None,
+            'booking_confirmed': False,
+            'user_name': None
         }
-        response = requests.post(f"{API_URL}/chat", json=payload, timeout=30)
-        
-        if response.status_code == 200:
-            return response.json()["response"]
-        else:
-            return f"Error: {response.status_code} - {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"Connection error: {str(e)}"
 
 def main():
     initialize_session()
@@ -61,10 +45,17 @@ def main():
         
         if st.button("🗑️ Clear Chat"):
             st.session_state.messages = []
-            try:
-                requests.delete(f"{API_URL}/session/{st.session_state.session_id}")
-            except:
-                pass
+            st.session_state.session_state = {
+                'messages': [],
+                'intent': None,
+                'date_preference': None,
+                'time_preference': None,
+                'duration': 60,
+                'available_slots': [],
+                'selected_slot': None,
+                'booking_confirmed': False,
+                'user_name': None
+            }
             st.rerun()
         
         st.markdown("---")
@@ -77,38 +68,18 @@ def main():
         - "What slots are available tomorrow?"
         """)
         
-        # API Status
         st.markdown("---")
         st.header("🔌 Status")
-        if st.session_state.api_available:
-            st.success("✅ API Connected")
-        else:
-            st.error("❌ API Disconnected")
-            if st.button("🔄 Retry Connection"):
-                st.session_state.api_available = check_api_health()
-                st.rerun()
-    
-    # Main chat interface
-    if not st.session_state.api_available:
-        st.error("🚫 **API Server Not Available**")
-        st.markdown("""
-        Please make sure the FastAPI server is running:
-        ```bash
-        python api.py
-        ```
-        """)
-        return
+        st.success("✅ Ready to Book!")
     
     # Display chat messages
-    chat_container = st.container()
-    with chat_container:
-        for message in st.session_state.messages:
-            if message["role"] == "user":
-                with st.chat_message("user"):
-                    st.write(message["content"])
-            else:
-                with st.chat_message("assistant"):
-                    st.write(message["content"])
+    for message in st.session_state.messages:
+        if message["role"] == "user":
+            with st.chat_message("user"):
+                st.write(message["content"])
+        else:
+            with st.chat_message("assistant"):
+                st.write(message["content"])
     
     # Chat input
     if prompt := st.chat_input("Type your message here..."):
@@ -122,8 +93,15 @@ def main():
         # Get AI response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = send_message(prompt)
-            st.write(response)
+                try:
+                    response, updated_state = st.session_state.booking_agent.process_message(
+                        prompt, st.session_state.session_state
+                    )
+                    st.session_state.session_state = updated_state
+                    st.write(response)
+                except Exception as e:
+                    response = f"I'm having trouble processing that. Could you try rephrasing? (Error: {str(e)})"
+                    st.write(response)
         
         # Add AI response to chat
         st.session_state.messages.append({"role": "assistant", "content": response})
